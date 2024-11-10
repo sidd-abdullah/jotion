@@ -154,6 +154,21 @@ pre {
   }
 }
 
+.Badge_image__wJseH {
+  display: none !important;
+}
+
+.tl-watermark_SEE-LICENSE {
+  display: none !important;
+}
+
+.tlui-buttons__horizontal {
+  height: 48px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
 .ProseMirror {
   @apply md:p-4;
 }

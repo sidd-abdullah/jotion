@@ -1,24 +1,25 @@
 'use client'
 
 import { useMutation, useQuery } from 'convex/react'
-import { PlusCircle } from 'lucide-react'
+import { FileText, LayoutGrid, StickyNote } from 'lucide-react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { Button } from '@/components/ui/button'
+import DocumentSidebar from '@/components/shared/sidebar/document-sidebar'
+import MobileSidebar from '@/components/shared/sidebar/mobile-sidebar'
+import WorkspaceSidebar from '@/components/shared/workspace/workspace-sidebar'
+import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { api } from '@/convex/_generated/api'
 import { type Id } from '@/convex/_generated/dataModel'
-import { useCurrentUser } from '@/hooks/use-current-user'
 
 export default function WorkspaceIdPage() {
   const router = useRouter()
   const params = useParams()
   const workspaceId = params?.workspaceId as Id<'workspaces'>
 
-  const { user, isLoading } = useCurrentUser()
   const createDocument = useMutation(api.documents.createDocument)
   const workspace = useQuery(api.documents.getWorkspaceById, {
     workspaceId,
@@ -35,40 +36,91 @@ export default function WorkspaceIdPage() {
       error: 'Failed to create a new document',
     })
   }
+  // TODO: need to add button to create a new canvas and board
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center">
-      <Image
-        src="/document.png"
-        priority
-        fetchPriority="high"
-        loading="eager"
-        height="300"
-        width="300"
-        alt="Empty"
-      />
-      {workspace === undefined || isLoading ? (
-        <SkeltonData />
-      ) : (
-        <>
-          <h2 className="text-lg font-medium pb-2">
-            Welcome to {user?.name}&apos;s Noted
-          </h2>
-          <Button onClick={handleCreateDocument}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create a Document
-          </Button>
-        </>
-      )}
+    <div className="min-h-screen">
+      <div className="w-[72px] min-h-screen hidden md:flex fixed inset-y-0 z-40">
+        <WorkspaceSidebar />
+      </div>
+      <div className="w-72 min-h-screen hidden md:flex fixed inset-y-0 z-30 pl-[72px]">
+        <DocumentSidebar />
+      </div>
+      <main className="md:pl-[288px] min-h-screen bg-white dark:bg-[#36393f]">
+        <MobileSidebar />
+        <div className="w-full min-h-[calc(100vh-56px)] md:min-h-screen flex flex-col items-center justify-center">
+          <Image
+            src="/document.png"
+            priority
+            fetchPriority="high"
+            loading="eager"
+            height="300"
+            width="300"
+            alt="Empty"
+          />
+          {workspace === undefined ? (
+            <SkeltonData />
+          ) : (
+            <div className="flex flex-wrap gap-4 justify-center">
+              <WorkspaceCard
+                title="Create Document"
+                icon={<FileText className="h-6 w-6 text-blue-500" />}
+                onClick={handleCreateDocument}
+              />
+              <WorkspaceCard
+                title="Create Canvas"
+                icon={<LayoutGrid className="h-6 w-6 text-green-500" />}
+                onClick={handleCreateDocument}
+              />
+              <WorkspaceCard
+                title="Create Board"
+                icon={<StickyNote className="h-6 w-6 text-yellow-500" />}
+                onClick={handleCreateDocument}
+              />
+            </div>
+          )}
+        </div>
+      </main>
     </div>
+  )
+}
+
+function WorkspaceCard({
+  title,
+  icon,
+  onClick,
+}: {
+  title: string
+  icon: JSX.Element
+  onClick: () => void
+}) {
+  return (
+    <Card
+      onClick={onClick}
+      className="cursor-pointer w-64 p-4 hover:shadow-lg transition dark:bg-muted"
+    >
+      <CardHeader className="flex items-center justify-center space-x-2">
+        {icon}
+        <CardTitle className="whitespace-nowrap">{title}</CardTitle>
+      </CardHeader>
+    </Card>
   )
 }
 
 function SkeltonData() {
   return (
-    <div className="flex w-full flex-col items-center space-y-4">
-      <Skeleton className="h-6 w-60" />
-      <Skeleton className="h-10 w-40" />
+    <div className="w-full flex flex-col items-center space-y-8">
+      <div className="flex flex-wrap gap-4 justify-center">
+        {[...Array(3)].map((_, index) => (
+          <div
+            key={index}
+            className="w-64 h-32 p-4 rounded-lg bg-muted/20 animate-pulse flex flex-col items-center justify-center space-y-2"
+          >
+            <Skeleton className="h-6 w-6 rounded-full" />
+            <Skeleton className="h-5 w-24 rounded" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

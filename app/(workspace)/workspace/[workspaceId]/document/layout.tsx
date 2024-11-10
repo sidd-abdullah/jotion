@@ -1,8 +1,8 @@
-import DocumentSidebar from '@/components/document/sidebar/document-sidebar'
-import MobileSidebar from '@/components/document/sidebar/mobile-sidebar'
-import WorkspaceSidebar from '@/components/workspace/workspace-sidebar'
+import DocumentSidebar from '@/components/shared/sidebar/document-sidebar'
+import MobileSidebar from '@/components/shared/sidebar/mobile-sidebar'
+import WorkspaceSidebar from '@/components/shared/workspace/workspace-sidebar'
 
-export default function WorkspaceLayout({
+export default function DocumentLayout({
   children,
 }: {
   children: React.ReactNode

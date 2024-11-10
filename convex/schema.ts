@@ -21,4 +21,10 @@ export default defineSchema({
     coverImage: v.optional(v.string()),
     content: v.optional(v.string()),
   }).index('by_workspace', ['workspaceId']),
+
+  canvas: defineTable({
+    workspaceId: v.string(),
+    userId: v.string(),
+    title: v.string(),
+  }).index('by_workspace', ['workspaceId']),
 })

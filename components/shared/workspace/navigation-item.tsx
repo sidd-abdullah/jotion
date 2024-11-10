@@ -3,7 +3,7 @@ import { useParams, useRouter } from 'next/navigation'
 
 import { cn } from '@/lib/utils'
 
-import { ActionTooltip } from '@/components/workspace/action-tooltip'
+import { ActionTooltip } from '@/components/shared/workspace/action-tooltip'
 
 interface NavigationItemProps {
   id: string

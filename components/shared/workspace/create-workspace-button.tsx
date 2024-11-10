@@ -3,7 +3,7 @@
 import { Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-import { ActionTooltip } from '@/components/workspace/action-tooltip'
+import { ActionTooltip } from '@/components/shared/workspace/action-tooltip'
 
 export default function CreateWorkspaceButton() {
   const router = useRouter()

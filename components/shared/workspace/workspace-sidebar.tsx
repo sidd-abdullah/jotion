@@ -2,11 +2,11 @@
 
 import { useQuery } from 'convex/react'
 
+import CreateWorkspaceButton from '@/components/shared/workspace/create-workspace-button'
+import NavigationItem from '@/components/shared/workspace/navigation-item'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import CreateWorkspaceButton from '@/components/workspace/create-workspace-button'
-import NavigationItem from '@/components/workspace/navigation-item'
 
 import { api } from '@/convex/_generated/api'
 

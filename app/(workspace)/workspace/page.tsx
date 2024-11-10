@@ -1,7 +1,6 @@
 'use client'
 
 import { useMutation } from 'convex/react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -96,11 +95,11 @@ export default function CreateWorkspacePage() {
             </Button>
             <Button
               variant={'secondary'}
-              asChild
+              onClick={() => router.back()}
               disabled={loading}
               className="w-full"
             >
-              <Link href={'/'}>Cancel</Link>
+              Cancel
             </Button>
           </form>
         </CardContent>
