@@ -1,7 +1,10 @@
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { v } from 'convex/values'
 
-import { mutation, query } from './_generated/server'
+import { internal } from './_generated/api'
+import { internalMutation, mutation, query } from './_generated/server'
+
+const MemberRoles = ['ADMIN', 'MODERATOR', 'GUEST'] as const
 
 export const createWorkspace = mutation({
   args: {
@@ -15,13 +18,55 @@ export const createWorkspace = mutation({
       throw new Error('Not authenticated')
     }
 
-    const workspace = await ctx.db.insert('workspaces', {
+    const workspaceId = await ctx.db.insert('workspaces', {
       userId,
       name: args.name,
       image: args.image,
     })
 
-    return workspace
+    await ctx.scheduler.runAfter(0, internal.documents.addMember, {
+      role: 'GUEST',
+      workspaceId,
+    })
+
+    return workspaceId
+  },
+})
+
+export const addMember = internalMutation({
+  args: {
+    workspaceId: v.id('workspaces'),
+    role: v.union(...MemberRoles.map((role) => v.literal(role))),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+
+    if (userId === null) {
+      throw new Error('Not authenticated')
+    }
+
+    const workspace = await ctx.db.get(args.workspaceId)
+
+    if (!workspace) {
+      throw new Error('Not found')
+    }
+
+    const existingMember = await ctx.db
+      .query('members')
+      .withIndex('by_workspace_and_user', (q) =>
+        q.eq('workspaceId', args.workspaceId).eq('userId', userId)
+      )
+      .first()
+
+    if (existingMember) {
+      return existingMember
+    }
+
+    await ctx.db.insert('members', {
+      workspaceId: args.workspaceId,
+      userId: userId,
+      role: args.role,
+    })
   },
 })
 

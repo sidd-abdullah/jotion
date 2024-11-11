@@ -35,7 +35,7 @@ export default function CanvasActions() {
 
   const onCopyLink = () => {
     navigator.clipboard
-      .writeText(`${origin}/workspace/${workspaceId}/canvas/${canvasId}`)
+      .writeText(`${origin}/invite/${workspaceId}/canvas/${canvasId}`)
       .then(() => toast.success('Link copied'))
       .catch(() => toast.error('Failed to copy link'))
   }

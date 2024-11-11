@@ -1,8 +1,11 @@
 'use client'
 
 import { useQuery } from 'convex/react'
+import { Send } from 'lucide-react'
 import { useParams, usePathname } from 'next/navigation'
 
+import { InviteModal } from '@/components/modals/invite-modal'
+import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -29,6 +32,18 @@ export default function DocumentSidebar() {
     <div className="min-h-screen flex flex-col text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5]">
       <UserMenu />
       <div className="p-1">
+        {!isShown && (
+          <InviteModal workspaceId={workspaceId}>
+            <Button
+              variant={'custom'}
+              size={'sm'}
+              className="w-full justify-start"
+            >
+              <Send className="mr-2 h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+              Invite Members
+            </Button>
+          </InviteModal>
+        )}
         {isShown && <NewPageButton />}
         <SettingButton />
         {isShown && <TrashBox />}
