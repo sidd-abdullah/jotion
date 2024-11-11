@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery } from 'convex/react'
-import { useParams } from 'next/navigation'
+import { useParams, usePathname } from 'next/navigation'
 
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -18,17 +18,20 @@ import { type Id } from '@/convex/_generated/dataModel'
 
 export default function DocumentSidebar() {
   const params = useParams()
+  const pathUrl = usePathname()
   const workspaceId = params?.workspaceId as Id<'workspaces'>
 
   const documents = useQuery(api.documents.getDocuments, { workspaceId })
+
+  const isShown = pathUrl !== `/workspace/${workspaceId}`
 
   return (
     <div className="min-h-screen flex flex-col text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5]">
       <UserMenu />
       <div className="p-1">
-        <NewPageButton />
+        {isShown && <NewPageButton />}
         <SettingButton />
-        <TrashBox />
+        {isShown && <TrashBox />}
         <SearchButton />
       </div>
       <Separator className="bg-zinc-200 dark:bg-zinc-700 rounded-md w-full" />
@@ -41,6 +44,7 @@ export default function DocumentSidebar() {
           </div>
         ) : (
           <div className="mr-2 p-1 space-y-1 flex flex-col">
+            {/* TODO: need to show the user who join this organization in future */}
             {documents.map((document) => (
               <DocumentItem
                 key={document._id}

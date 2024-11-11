@@ -20,6 +20,7 @@ export default function WorkspaceIdPage() {
   const params = useParams()
   const workspaceId = params?.workspaceId as Id<'workspaces'>
 
+  const createCanvas = useMutation(api.canvas.createCanvas)
   const createDocument = useMutation(api.documents.createDocument)
   const workspace = useQuery(api.documents.getWorkspaceById, {
     workspaceId,
@@ -36,7 +37,18 @@ export default function WorkspaceIdPage() {
       error: 'Failed to create a new document',
     })
   }
-  // TODO: need to add button to create a new canvas and board
+
+  const handleCreateCanvas = () => {
+    const promise = createCanvas({ workspaceId }).then((canvasId) =>
+      router.push(`/workspace/${workspaceId}/canvas/${canvasId}`)
+    )
+
+    toast.promise(promise, {
+      loading: 'Creating a new canvas...',
+      success: 'New canvas created',
+      error: 'Failed to create a new canvas',
+    })
+  }
 
   return (
     <div className="min-h-screen">
@@ -70,13 +82,14 @@ export default function WorkspaceIdPage() {
               <WorkspaceCard
                 title="Create Canvas"
                 icon={<LayoutGrid className="h-6 w-6 text-green-500" />}
-                onClick={handleCreateDocument}
+                onClick={handleCreateCanvas}
               />
-              <WorkspaceCard
+              {/* TODO: need to work on this in future */}
+              {/* <WorkspaceCard
                 title="Create Board"
                 icon={<StickyNote className="h-6 w-6 text-yellow-500" />}
                 onClick={handleCreateDocument}
-              />
+              /> */}
             </div>
           )}
         </div>

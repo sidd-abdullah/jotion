@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { useRoom } from '@liveblocks/react/suspense'
 import { useEffect, useState } from 'react'
 import {
@@ -20,24 +19,28 @@ import {
   react,
 } from 'tldraw'
 
-type User = {
-  id: string
-  name: string
-  picture: string
-}
-
-interface StorageStoreProps {
-  shapeUtils?: TLAnyShapeUtilConstructor[]
-  user?: User
-}
-
-export function useStorageStore({ shapeUtils = [], user }: StorageStoreProps) {
+export function useStorageStore({
+  shapeUtils = [],
+  user,
+}: Partial<{
+  hostUrl: string
+  version: number
+  shapeUtils: TLAnyShapeUtilConstructor[]
+  user: {
+    id: string
+    picture: string
+    name: string
+  }
+}>) {
+  // Get Liveblocks room
   const room = useRoom()
 
+  // Set up tldraw store and status
   const [store] = useState(() => {
-    return createTLStore({
+    const store = createTLStore({
       shapeUtils: [...defaultShapeUtils, ...shapeUtils],
     })
+    return store
   })
 
   const [storeWithStatus, setStoreWithStatus] = useState<TLStoreWithStatus>({
@@ -45,13 +48,15 @@ export function useStorageStore({ shapeUtils = [], user }: StorageStoreProps) {
   })
 
   useEffect(() => {
-    const unsubs: Array<() => void> = []
+    const unsubs: (() => void)[] = []
     setStoreWithStatus({ status: 'loading' })
 
     async function setup() {
+      // Get Liveblocks Storage values
       const { root } = await room.getStorage()
       const liveRecords = root.get('records')
 
+      // Initialize tldraw with records from Storage
       store.clear()
       store.put(
         [
@@ -63,11 +68,12 @@ export function useStorageStore({ shapeUtils = [], user }: StorageStoreProps) {
             name: 'Page 1',
             index: 'a1' as IndexKey,
           }),
-          ...Array.from(liveRecords.values() as Iterable<TLRecord>),
+          ...[...liveRecords.values()],
         ],
         'initialize'
       )
 
+      // Sync tldraw changes with Storage
       unsubs.push(
         store.listen(
           ({ changes }: TLStoreEventInfo) => {
@@ -89,6 +95,7 @@ export function useStorageStore({ shapeUtils = [], user }: StorageStoreProps) {
         )
       )
 
+      // Sync tldraw changes with Presence
       function syncStoreWithPresence({ changes }: TLStoreEventInfo) {
         room.batch(() => {
           Object.values(changes.added).forEach((record) => {
@@ -119,6 +126,7 @@ export function useStorageStore({ shapeUtils = [], user }: StorageStoreProps) {
         })
       )
 
+      // Update tldraw when Storage changes
       unsubs.push(
         room.subscribe(
           liveRecords,
@@ -127,42 +135,75 @@ export function useStorageStore({ shapeUtils = [], user }: StorageStoreProps) {
             const toPut: TLRecord[] = []
 
             for (const update of storageChanges) {
-              if (update.type !== 'LiveMap') continue
+              if (update.type !== 'LiveMap') {
+                return
+              }
 
               for (const [id, { type }] of Object.entries(update.updates)) {
-                if (type === 'delete') {
-                  toRemove.push(id as TLRecord['id'])
-                } else if (type === 'update') {
-                  const curr = update.node.get(id)
-                  if (curr) toPut.push(curr as TLRecord)
+                switch (type) {
+                  // Object deleted from Liveblocks, remove from tldraw
+                  case 'delete': {
+                    toRemove.push(id as TLRecord['id'])
+                    break
+                  }
+
+                  // Object updated on Liveblocks, update tldraw
+                  case 'update': {
+                    const curr = update.node.get(id)
+                    if (curr) {
+                      toPut.push(curr as any as TLRecord)
+                    }
+                    break
+                  }
                 }
               }
             }
 
+            // Update tldraw with changes
             store.mergeRemoteChanges(() => {
-              if (toRemove.length) store.remove(toRemove)
-              if (toPut.length) store.put(toPut)
+              if (toRemove.length) {
+                store.remove(toRemove)
+              }
+              if (toPut.length) {
+                store.put(toPut)
+              }
             })
           },
           { isDeep: true }
         )
       )
 
-      const userPreferences = computed<User>('userPreferences', () => {
-        if (!user) throw new Error('User is undefined')
-        return user
+      // Set user's info
+      const userPreferences = computed<{
+        id: string
+        picture: string
+        name: string
+      }>('userPreferences', () => {
+        if (!user) {
+          throw new Error('Failed to get user')
+        }
+        return {
+          id: user.id,
+          picture: user.picture,
+          name: user.name,
+        }
       })
 
-      const connectionIdString = `${room.getSelf()?.connectionId ?? 0}`
+      // Unique ID for this session is their connectionId
+      const connectionIdString = '' + (room.getSelf()?.connectionId ?? 0)
+
+      // Set both
       const presenceDerivation = createPresenceStateDerivation(
         userPreferences,
         InstancePresenceRecordType.createId(connectionIdString)
       )(store)
 
+      // Update presence with tldraw values
       room.updatePresence({
         presence: presenceDerivation.get() ?? null,
       })
 
+      // Update Liveblocks when tldraw presence changes
       unsubs.push(
         react('when presence changes', () => {
           const presence = presenceDerivation.get() ?? null
@@ -172,29 +213,53 @@ export function useStorageStore({ shapeUtils = [], user }: StorageStoreProps) {
         })
       )
 
+      // Sync Liveblocks presence with tldraw
       unsubs.push(
         room.subscribe('others', (others, event) => {
           const toRemove: TLInstancePresence['id'][] = []
           const toPut: TLInstancePresence[] = []
 
-          if (event.type === 'leave' && event.user.connectionId) {
-            toRemove.push(
-              InstancePresenceRecordType.createId(`${event.user.connectionId}`)
-            )
-          } else if (event.type === 'reset') {
-            others.forEach((other) => {
-              toRemove.push(
-                InstancePresenceRecordType.createId(`${other.connectionId}`)
-              )
-            })
-          } else if (event.type === 'enter' || event.type === 'update') {
-            const presence = event.user.presence
-            if (presence?.presence) toPut.push(presence?.presence)
+          switch (event.type) {
+            // A user disconnected from Liveblocks
+            case 'leave': {
+              if (event.user.connectionId) {
+                toRemove.push(
+                  InstancePresenceRecordType.createId(
+                    `${event.user.connectionId}`
+                  )
+                )
+              }
+              break
+            }
+
+            // Others was reset, e.g. after losing connection and returning
+            case 'reset': {
+              others.forEach((other) => {
+                toRemove.push(
+                  InstancePresenceRecordType.createId(`${other.connectionId}`)
+                )
+              })
+              break
+            }
+
+            // A user entered or their presence updated
+            case 'enter':
+            case 'update': {
+              const presence = event?.user?.presence
+              if (presence?.presence) {
+                toPut.push(event?.user?.presence?.presence)
+              }
+            }
           }
 
+          // Update tldraw with changes
           store.mergeRemoteChanges(() => {
-            if (toRemove.length) store.remove(toRemove)
-            if (toPut.length) store.put(toPut)
+            if (toRemove.length) {
+              store.remove(toRemove)
+            }
+            if (toPut.length) {
+              store.put(toPut)
+            }
           })
         })
       )
@@ -206,7 +271,7 @@ export function useStorageStore({ shapeUtils = [], user }: StorageStoreProps) {
       })
     }
 
-    setup().catch(console.error)
+    void setup()
 
     return () => {
       unsubs.forEach((fn) => fn())

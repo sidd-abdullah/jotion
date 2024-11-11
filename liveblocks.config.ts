@@ -1,3 +1,5 @@
+import { type LiveMap } from '@liveblocks/core'
+
 declare global {
   interface Liveblocks {
     Presence: {
@@ -7,8 +9,7 @@ declare global {
 
     // The Storage tree for the room, for useMutation, useStorage, etc.
     Storage: {
-      // Example, a conflict-free list
-      // animals: LiveList<string>;
+      records: LiveMap<string, any> // Used by tldraw
     }
 
     // Custom user info set when authenticating with a secret key

@@ -1,5 +1,6 @@
 'use client'
 
+import { LiveMap } from '@liveblocks/core'
 import { LiveblocksProvider } from '@liveblocks/react'
 import { ClientSideSuspense, RoomProvider } from '@liveblocks/react/suspense'
 import { useQuery } from 'convex/react'
@@ -53,7 +54,11 @@ export function Room({
         return await response.json()
       }}
     >
-      <RoomProvider id={roomId} initialPresence={{}}>
+      <RoomProvider
+        id={roomId}
+        initialPresence={{ presence: undefined }}
+        initialStorage={{ records: new LiveMap() }}
+      >
         <ClientSideSuspense fallback={<Loading />}>
           {children}
         </ClientSideSuspense>
